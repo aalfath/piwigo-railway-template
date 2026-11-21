@@ -44,7 +44,7 @@ If setup fails (for example MySQL never answers), the container exits with an er
 
 ## Updates
 
-Each new Piwigo release is a commit to `main` here: a new pinned version and digest, plus an entry in [CHANGELOG.md](CHANGELOG.md), with breaking changes first. Railway shows deployers an "update available" notice; when you apply it, the new image copies the new Piwigo files over the old ones on the volume (your photos, `_data` and `local/` stay), and Piwigo runs any database upgrade when the webmaster next opens the gallery. Back up the volume and database before major upgrades.
+Each new Piwigo release is a commit to `main` here: a new pinned version and digest, plus an entry in [CHANGELOG.md](CHANGELOG.md), with breaking changes first. Railway shows deployers an "update available" notice; when you apply it, the new image copies the new Piwigo files over the old ones on the volume (your photos, `_data` and `local/` stay), and after a major version Piwigo opens its upgrade page, where the webmaster logs in to finish the database upgrade. Back up the volume and database before major upgrades.
 
 ## Files
 
