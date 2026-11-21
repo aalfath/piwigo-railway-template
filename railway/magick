@@ -1,5 +1,5 @@
 #!/bin/sh
-# Piwigo calls `magick` once per thumbnail or resized copy. Run one at a time,
-# so a page full of new photos can't start a dozen ImageMagick processes and
-# exhaust a small (0.5 GB) Railway service. Waits at most 10 minutes for its turn.
-exec /usr/bin/flock -w 600 /tmp/piwigo-magick.lock /usr/bin/magick "$@"
+# Piwigo calls `magick` once per thumbnail or resized copy. Run them one at a
+# time, so a page full of new photos can't start a dozen ImageMagick processes
+# and exhaust a small (0.5 GB) Railway service.
+exec /usr/bin/flock /tmp/piwigo-magick.lock /usr/bin/magick "$@"
