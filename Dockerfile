@@ -17,19 +17,23 @@ COPY railway/ /railway/
 COPY nginx.conf /etc/nginx/nginx.conf
 
 RUN set -eux; \
-    chmod 0755 /railway/init.sh; \
+    chmod 0755 /railway/init.sh /railway/magick; \
+    ln -s /railway/magick /usr/local/bin/magick; \
     for f in /railway/*.php; do php84 -l "$f"; done; \
     # Our setup step wraps the upstream one (copy/upgrade files, permissions).
     printf '/bin/ash -c "/railway/init.sh"\n' > /etc/s6-overlay/s6-rc.d/init-script/up; \
     sed -i '1i #!/bin/execlineb -P' /etc/s6-overlay/s6-rc.d/init-script/up; \
-    # Fit Railway's smallest plans (0.5 GB per service): fewer PHP workers, and
-    # ImageMagick spills big photos to disk instead of RAM.
+    # Fit Railway's smallest plans (0.5 GB, 1 vCPU per service). ImageMagick
+    # otherwise starts one thread per host CPU and keeps whole photos in RAM;
+    # PHP workers find our one-at-a-time `magick` wrapper first on PATH.
     sed -i 's/^memory_limit=.*/memory_limit=256M/' /etc/php84/conf.d/piwigo.ini; \
-    sed -i 's/^pm.max_children = .*/pm.max_children = 4/' /etc/php84/php-fpm.d/www.conf; \
-    sed -i 's|^</policymap>|  <policy domain="resource" name="memory" value="128MiB"/>\n  <policy domain="resource" name="map" value="256MiB"/>\n</policymap>|' /etc/ImageMagick-7/policy.xml; \
-    grep -q 'name="memory" value="128MiB"' /etc/ImageMagick-7/policy.xml; \
+    sed -i 's/^pm.max_children = .*/pm.max_children = 6/' /etc/php84/php-fpm.d/www.conf; \
+    printf 'env[PATH] = /usr/local/bin:/usr/bin:/bin\n' >> /etc/php84/php-fpm.d/www.conf; \
+    sed -i 's|^</policymap>|  <policy domain="resource" name="thread" value="1"/>\n  <policy domain="resource" name="memory" value="128MiB"/>\n  <policy domain="resource" name="map" value="256MiB"/>\n</policymap>|' /etc/ImageMagick-7/policy.xml; \
+    magick -list resource | grep -q 'Thread: 1'; \
     grep -q '^memory_limit=256M' /etc/php84/conf.d/piwigo.ini; \
-    grep -q '^pm.max_children = 4' /etc/php84/php-fpm.d/www.conf
+    grep -q '^pm.max_children = 6' /etc/php84/php-fpm.d/www.conf; \
+    grep -q '^env\[PATH\]' /etc/php84/php-fpm.d/www.conf
 
 EXPOSE 8080
 ENTRYPOINT ["/init"]
