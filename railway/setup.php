@@ -95,16 +95,16 @@ if (!$m2 || !rw_is_installed($m2, $db['prefix'])) {
   rw_fail('the installer did not finish');
 }
 
-// 4. Store the real admin password with Piwigo's own hasher.
+// 4. Store the real admin password with Piwigo's own hasher. Piwigo addslashes()
+// every POST value before it checks a login, so hash the password the same way.
 require_once PIWIGO_DIR.'/include/passwordhash.class.php';
 $hasher = new PasswordHash(13, true);
-$hash = $hasher->HashPassword($pass);
+$hash = $hasher->HashPassword(addslashes($pass));
 if (strpos($hash, '$P$') !== 0) { rw_fail('could not hash the admin password'); }
 $st = $m2->prepare('UPDATE `'.$db['prefix'].'users` SET password = ? WHERE id = 1');
 $st->bind_param('s', $hash);
 if (!$st->execute() || $st->affected_rows !== 1) { rw_fail('could not set the admin password'); }
 
-// The installer leaves a PHP session file behind; nothing else is needed from it.
 rw_write_db_config($db);
 rw_log('Piwigo installed; log in as "'.$admin.'" with PIWIGO_ADMIN_PASSWORD');
 exit(0);
